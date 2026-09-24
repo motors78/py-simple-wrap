@@ -240,10 +240,11 @@ def test_ai_chat_exception_caught(capsys):
     assert "test exception" in captured.out
 
 
-# ---------------------------------------------------------------------------
-# EasyAgent
-# ---------------------------------------------------------------------------
+###################################
+####                ###
 
+        ########
+####################################
 def test_easy_agent_init_success():
     """Test that EasyAgent loads a .txt master prompt correctly."""
     with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
