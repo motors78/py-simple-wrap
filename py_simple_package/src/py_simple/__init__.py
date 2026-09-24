@@ -6,6 +6,7 @@ from .easy_ai import (
     ask_ai,
     detect_language,
     detect_language,
+    detect_language,
     get_model,
     summarize_text,
     translate_text,
