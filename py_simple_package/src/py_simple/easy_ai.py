@@ -2,21 +2,21 @@
 easy_ai wraps common LangChain functionality to make it easier to use.
 """
 
+import re
 from typing import Any
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage
-from pydantic import SecretStr
 
 
 class EasyAIError(Exception):
     """
     Raised when a call to an AI model or provider cannot be completed.
+
     Args:
         message (str): Description of what went wrong.
     """
 
-    def __init__(self, message):
+    def __init__(self, message: str):
         self.message = message
         super().__init__(self.message)
 
@@ -69,11 +69,61 @@ def get_model(
         EasyAIError: If `provider` isn't one of the supported providers.
 
     Example:
-        === "The Py_simple Way"
+        === "The EasyAI Way"
             ```python
-            from py_simple import get_model
+            from easy_ai import get_model
 
             model = get_model("anthropic", "claude-sonnet-4-6")
+            ```
+    """
+    provider = provider.lower()
+
+    if provider == "openai":
+        from langchain_openai import ChatOpenAI
+
+        kwargs: dict[str, Any] = {"model": model_name}
+        if api_key is not None:
+            kwargs["api_key"] = SecretStr(api_key)
+        if base_url is not None:
+            kwargs["base_url"] = base_url
+        return ChatOpenAI(**kwargs)
+
+    elif provider == "ollama":
+        from langchain_ollama import ChatOllama
+
+        kwargs = {"model": model_name}
+        if base_url is not None:
+            kwargs["base_url"] = base_url
+        return ChatOllama(**kwargs)
+
+    elif provider == "anthropic":
+        from langchain_anthropic import ChatAnthropic
+
+        kwargs = {"model": model_name, "timeout": timeout}
+        if api_key is not None:
+            kwargs["api_key"] = SecretStr(api_key)
+        return ChatAnthropic(**kwargs)
+
+    elif provider == "google":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        kwargs = {"model": model_name}
+        if api_key is not None:
+            kwargs["api_key"] = SecretStr(api_key)
+        return ChatGoogleGenerativeAI(**kwargs)
+
+    elif provider == "mistral":
+        from langchain_mistralai import ChatMistralAI
+
+        kwargs = {"model": model_name}
+        if api_key is not None:
+            kwargs["api_key"] = SecretStr(api_key)
+        return ChatMistralAI(**kwargs)
+
+    raise EasyAIError(
+        f"Unsupported provider: {provider!r}. "
+        'Expected one of "openai", "ollama", "anthropic", "google", "mistral".'
+    )
 
 
 def detect_language(text: str) -> str:
@@ -86,43 +136,44 @@ def detect_language(text: str) -> str:
         text (str): The raw text to analyze.
 
     Returns:
-        str: The name of the detected language (e.g. "English",
-        "Italian", "Spanish"), or "Unknown" if no language could
-        be confidently identified.
+        str: The name of the detected language (e.g., "English",
+        "Italian", "Spanish"), or "Unknown" if no language could be
+        confidently identified.
 
     Raises:
         EasyAIError: If `text` is not a string or is empty/whitespace.
 
     Example:
-        === "The Py_simple Way"
-```python
-            from py_simple import detect_language
+        === "The EasyAI Way"
+            ```python
+            from easy_ai import detect_language
 
             detect_language("Hello, how are you?")
             # 'English'
             detect_language("Ciao, come stai?")
             # 'Italian'
-```
+            ```
 
         === "The Traditional Way"
-```python
+            ```python
             from langdetect import detect
 
             detect("Hello, how are you?")
             # 'en'  <- you still have to map codes to names yourself
-```
+            ```
     """
     if not isinstance(text, str) or not text.strip():
-        raise EasyAIError("\n\n\nERROR: detect_language() requires a non-empty string.")
+        raise EasyAIError("ERROR: detect_language() requires a non-empty string.")
 
-    lowered = text.lower()
+    # Estrai le parole vere (match su parole intere, non sottostringhe)
+    words = set(re.findall(r"[a-zà-öø-ÿ]+", text.lower()))
 
     scores = {
-        "English": sum(w in lowered for w in ["the", "and", "is", "you", "are", "hello"]),
-        "Italian": sum(w in lowered for w in ["il", "la", "che", "di", "sono", "ciao"]),
-        "Spanish": sum(w in lowered for w in ["el", "la", "que", "de", "es", "hola"]),
-        "French": sum(w in lowered for w in ["le", "la", "et", "est", "vous", "bonjour"]),
-        "German": sum(w in lowered for w in ["der", "die", "und", "ist", "du", "hallo"]),
+        "English": sum(w in words for w in ["the", "and", "is", "you", "are", "hello"]),
+        "Italian": sum(w in words for w in ["il", "la", "che", "di", "sono", "ciao"]),
+        "Spanish": sum(w in words for w in ["el", "la", "que", "de", "es", "hola"]),
+        "French": sum(w in words for w in ["le", "la", "et", "est", "vous", "bonjour"]),
+        "German": sum(w in words for w in ["der", "die", "und", "ist", "du", "hallo"]),
     }
 
     best_lang = max(scores, key=scores.get)
