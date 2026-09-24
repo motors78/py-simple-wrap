@@ -74,3 +74,59 @@ def get_model(
             from py_simple import get_model
 
             model = get_model("anthropic", "claude-sonnet-4-6")
+
+
+def detect_language(text: str) -> str:
+    """
+    Guesses which language a piece of text is written in, using
+    simple keyword scoring rules, without you having to install
+    a language-detection library or call an external API.
+
+    Args:
+        text (str): The raw text to analyze.
+
+    Returns:
+        str: The name of the detected language (e.g. "English",
+        "Italian", "Spanish"), or "Unknown" if no language could
+        be confidently identified.
+
+    Raises:
+        EasyAIError: If `text` is not a string or is empty/whitespace.
+
+    Example:
+        === "The Py_simple Way"
+```python
+            from py_simple import detect_language
+
+            detect_language("Hello, how are you?")
+            # 'English'
+            detect_language("Ciao, come stai?")
+            # 'Italian'
+```
+
+        === "The Traditional Way"
+```python
+            from langdetect import detect
+
+            detect("Hello, how are you?")
+            # 'en'  <- you still have to map codes to names yourself
+```
+    """
+    if not isinstance(text, str) or not text.strip():
+        raise EasyAIError("\n\n\nERROR: detect_language() requires a non-empty string.")
+
+    lowered = text.lower()
+
+    scores = {
+        "English": sum(w in lowered for w in ["the", "and", "is", "you", "are", "hello"]),
+        "Italian": sum(w in lowered for w in ["il", "la", "che", "di", "sono", "ciao"]),
+        "Spanish": sum(w in lowered for w in ["el", "la", "que", "de", "es", "hola"]),
+        "French": sum(w in lowered for w in ["le", "la", "et", "est", "vous", "bonjour"]),
+        "German": sum(w in lowered for w in ["der", "die", "und", "ist", "du", "hallo"]),
+    }
+
+    best_lang = max(scores, key=scores.get)
+    if scores[best_lang] == 0:
+        return "Unknown"
+
+    return best_lang
