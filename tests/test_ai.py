@@ -10,6 +10,7 @@ from py_simple_package.src.py_simple.easy_ai import (
     _is_exit_command,
     ai_chat,
     ask_ai,
+    detect_language,
     get_model,
     summarize_text,
     translate_text,
@@ -253,3 +254,41 @@ def test_easy_agent_init_not_found():
     with pytest.raises(EasyAIError) as exc_info:
         EasyAgent("nonexistent_prompt.txt")
     assert "No such file or directory" in str(exc_info.value)
+
+
+def test_detect_language_english():
+    """Test that detect_language recognizes English text."""
+    assert detect_language("Hello, how are you?") == "English"
+
+
+def test_detect_language_italian():
+    """Test that detect_language recognizes Italian text."""
+    assert detect_language("Ciao, come stai?") == "Italian"
+
+
+def test_detect_language_spanish():
+    """Test that detect_language recognizes Spanish text."""
+    assert detect_language("Hola, ¿qué tal?") == "Spanish"
+
+
+def test_detect_language_unknown():
+    """Test that detect_language returns 'Unknown' for unrecognized text."""
+    assert detect_language("xyz qwerty asdf") == "Unknown"
+
+
+def test_detect_language_empty_raises():
+    """Test that detect_language raises EasyAIError on empty input."""
+    with pytest.raises(EasyAIError):
+        detect_language("")
+
+
+def test_detect_language_whitespace_raises():
+    """Test that detect_language raises EasyAIError on whitespace-only input."""
+    with pytest.raises(EasyAIError):
+        detect_language("   ")
+
+
+def test_detect_language_non_string_raises():
+    """Test that detect_language raises EasyAIError on non-string input."""
+    with pytest.raises(EasyAIError):
+        detect_language(123)
