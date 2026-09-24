@@ -4,6 +4,7 @@ easy_ai wraps common LangChain functionality to make it easier to use.
 
 import re
 from typing import Any
+import re
 
 from langchain_core.language_models import BaseChatModel
 
@@ -166,6 +167,42 @@ def detect_language(text: str) -> str:
         raise EasyAIError("ERROR: detect_language() requires a non-empty string.")
 
     # Estrai le parole vere (match su parole intere, non sottostringhe)
+    words = set(re.findall(r"[a-zà-öø-ÿ]+", text.lower()))
+
+    scores = {
+        "English": sum(w in words for w in ["the", "and", "is", "you", "are", "hello"]),
+        "Italian": sum(w in words for w in ["il", "la", "che", "di", "sono", "ciao"]),
+        "Spanish": sum(w in words for w in ["el", "la", "que", "de", "es", "hola"]),
+        "French": sum(w in words for w in ["le", "la", "et", "est", "vous", "bonjour"]),
+        "German": sum(w in words for w in ["der", "die", "und", "ist", "du", "hallo"]),
+    }
+
+    best_lang = max(scores, key=scores.get)
+    if scores[best_lang] == 0:
+        return "Unknown"
+
+    return best_lang
+
+
+def detect_language(text: str) -> str:
+    """
+    Guesses which language a piece of text is written in, using
+    simple keyword scoring rules, without installing a language-detection
+    library or calling an external API.
+
+    Args:
+        text (str): The raw text to analyze.
+
+    Returns:
+        str: The detected language name (e.g., "English"), or
+        "Unknown" if nothing could be confidently identified.
+
+    Raises:
+        EasyAIError: If `text` is not a string or is empty/whitespace.
+    """
+    if not isinstance(text, str) or not text.strip():
+        raise EasyAIError("ERROR: detect_language() requires a non-empty string.")
+
     words = set(re.findall(r"[a-zà-öø-ÿ]+", text.lower()))
 
     scores = {
